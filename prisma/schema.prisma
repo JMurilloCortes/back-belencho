@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cliente {
+  id             String         @id @default(cuid())
+  nombre         String
+  apellido       String
+  email          String         @unique
+  password       String
+  telefono       String
+  direccion      String
+  rol            Rol            @default(CLIENTE)
+  carritos       Carrito[]
+  favoritos      Favoritos[]
+  calificaciones Calificacion[]
+  pedidos        Pedido[]
+}
+
+model Carrito {
+  id        Int        @id @default(autoincrement())
+  cliente   Cliente    @relation(fields: [clienteId], references: [id])
+  clienteId String
+  productos Producto[] @relation("CarritoProducto")
+}
+
+model Favoritos {
+  id        Int        @id @default(autoincrement())
+  cliente   Cliente    @relation(fields: [clienteId], references: [id])
+  clienteId String
+  productos Producto[] @relation("FavoritosProducto")
+}
+
+model Pedido {
+  id          Int             @id @default(autoincrement())
+  cliente     Cliente         @relation(fields: [clienteId], references: [id])
+  clienteId   String
+  fechaPedido DateTime        @default(now())
+  estado      EstadoPedido    @default(PENDIENTE)
+  detalles    DetallePedido[]
+  pagos       Pago[]
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  EN_PROCESO
+  ENVIADO
+  ENTREGADO
+}
+
+model DetallePedido {
+  id         Int      @id @default(autoincrement())
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId   Int
+  producto   Producto @relation(fields: [productoId], references: [id])
+  productoId Int
+  cantidad   Int
+}
+
+model Producto {
+  id             Int             @id @default(autoincrement())
+  nombre         String
+  descripcion    String
+  precio         Float
+  stock          Int
+  imagenes       String[]
+  categoria      Categoria       @relation(fields: [categoriaId], references: [id])
+  categoriaId    Int
+  calificaciones Calificacion[]
+  carritos       Carrito[]       @relation("CarritoProducto")
+  favoritos      Favoritos[]     @relation("FavoritosProducto")
+  detalles       DetallePedido[]
+}
+
+model Categoria {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+  productos Producto[]
+}
+
+model Calificacion {
+  id           Int      @id @default(autoincrement())
+  cliente      Cliente  @relation(fields: [clienteId], references: [id])
+  clienteId    String
+  producto     Producto @relation(fields: [productoId], references: [id])
+  productoId   Int
+  calificacion Float
+}
+
+model Pago {
+  id        Int      @id @default(autoincrement())
+  pedido    Pedido   @relation(fields: [pedidoId], references: [id])
+  pedidoId  Int
+  monto     Float
+  fechaPago DateTime @default(now())
+}
+
+enum Rol {
+  ADMIN
+  CLIENTE
+}
